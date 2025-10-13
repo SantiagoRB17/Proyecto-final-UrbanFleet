@@ -1,0 +1,35 @@
+# --- Archivos y carpetas generadas por Elixir / Mix ---
+/_build/
+ /deps/
+*.beam
+*.ez
+
+# --- Archivos de configuración local ---
+/config/*.secret.exs
+
+# --- Archivos del editor (VS Code, etc.) ---
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# --- Archivos del sistema ---
+.DS_Store
+Thumbs.db
+
+# --- Archivos de entorno ---
+.env
+.env.*
+
+# --- Archivos de pruebas ---
+/cover/
+*.coverdata
+
+# --- Archivos de compilación o cache ---
+/.elixir_ls/
+*.cache
+
+# --- Archivos temporales ---
+/tmp/
+*.bak
+*.old
