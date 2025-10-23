@@ -4,12 +4,12 @@ defmodule Taxi.User do
   """
   defstruct [
     # Identificador único del usuario
-    :username,
+    :nombre,
     # Contraseña simple
     :password,
     # "cliente" o "conductor"
-    :role,
+    :rol,
     # Puntaje acumulado
-    score: 0
+    :puntaje
   ]
 end
