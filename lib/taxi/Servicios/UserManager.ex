@@ -16,13 +16,20 @@ defmodule Taxi.UserManager do
   def crear(nombre,password,rol) do
     %User{nombre: nombre,password: password, rol: rol, puntaje: 0}
   end
+
   def ingresar_rol(mensaje) do
     rol = IO.gets(mensaje) |> String.trim()
     case rol do
       "1" -> :cliente
       "2" -> :conductor
-      _ -> "Ingrese un rol valido(1-Cliente,2-Conductor): " |> Util.mostrar_error()
-        ingresar_rol("Ingrese su rol (1-Cliente, 2-Conductor): ")
+      _ -> ingresar_rol("Ingrese un numero valido(1-Cliente,2-Conductor): ")
+    end
+  end
+
+  def consultarPuntaje(nombre) do
+    case UserPersistence.find_by_name(nombre) do
+      nil -> {:error, "Usuario no encontrado"}
+      %User{puntaje: puntaje} -> {:ok, puntaje}
     end
   end
 
