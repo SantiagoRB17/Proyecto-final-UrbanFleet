@@ -26,7 +26,8 @@ defmodule Taxi.UserManager do
     end
   end
 
-  def consultarPuntaje(nombre) do
+  def consultarPuntaje() do
+    nombre = IO.gets("Ingrese su nombre: ") |> String.trim()
     case UserPersistence.find_by_name(nombre) do
       nil -> {:error, "Usuario no encontrado"}
       %User{puntaje: puntaje} -> {:ok, puntaje}
