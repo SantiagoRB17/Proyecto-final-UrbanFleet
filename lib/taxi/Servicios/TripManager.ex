@@ -1,12 +1,10 @@
 defmodule Taxi.TripManager do
 
   def estado do
-    %{trips: {}, next_id: 1}
+    %{trips: %{}, next_id: 1}
   end
 
-  def crear_viaje(estado, cliente, origen, destino) do
-    id = estado.next_id
-
+  def crear_viaje(%{trips: trips, next_id: id} = estado, cliente, origen, destino) do
     trip = %{
       id: id,
       client: cliente,
@@ -16,7 +14,7 @@ defmodule Taxi.TripManager do
       status: :pendiente
     }
 
-    nuevo_viaje = Map.put(estado.trips, id, trip)
+    nuevo_viaje = Map.put(trips, id, trip)
     actualizado = %{estado | trips: nuevo_viaje, next_id: id + 1}
 
     {trip, actualizado}
