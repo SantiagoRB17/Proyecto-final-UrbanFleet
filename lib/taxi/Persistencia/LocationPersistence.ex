@@ -12,8 +12,6 @@ defmodule Taxi.LocationPersistence do
     load_all()
     |> Enum.find(&(&1.name == nombre))
   end
-
-  @spec existe?(any()) :: none()
   def existe?(nombre) do
     case find_by_name(nombre) do
       nil -> false
