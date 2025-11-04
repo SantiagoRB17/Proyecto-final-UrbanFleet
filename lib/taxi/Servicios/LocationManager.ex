@@ -1,27 +1,12 @@
 defmodule Taxi.LocationManager do
-
-  alias Taxi.Location
-
-  @locations_file "data/locations.json"
-
-  def cargar_ubicaciones do
-    case File.read(@locations_file) do
-      {:ok, content} ->
-        Jason.decode!(content)
-        |> Enum.map(&crear_location/1)
-
-      {:error, _} ->
-        []
-    end
-  end
+  alias Taxi.{Location, LocationPersistence}
 
   def crear_location(nombre) when is_binary(nombre) do
     %Location{name: nombre}
   end
 
   def ubicacion_valida?(nombre) do
-    cargar_ubicaciones()
-    |> Enum.any?(&(&1.name == nombre))
+    LocationPersistence.existe?(nombre)
   end
 
   def mostrar_ubicaciones do
@@ -35,7 +20,7 @@ defmodule Taxi.LocationManager do
   end
 
   def listar_nombres do
-    cargar_ubicaciones()
+    LocationPersistence.load_all()
     |> Enum.map(&(&1.name))
   end
 
@@ -64,7 +49,7 @@ defmodule Taxi.LocationManager do
   end
 
   def buscar_ubicacion(nombre) do
-    case Enum.find(cargar_ubicaciones(), &(&1.name == nombre)) do
+    case LocationPersistence.find_by_name(nombre) do
       nil -> {:error, "Ubicación no encontrada"}
       location -> {:ok, location}
     end
@@ -85,5 +70,4 @@ defmodule Taxi.LocationManager do
         :ok
     end
   end
-
 end
