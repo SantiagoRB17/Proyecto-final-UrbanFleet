@@ -1,5 +1,7 @@
 defmodule Taxi.TripManager do
 
+  alias Taxi.TripPersistence
+
   def estado do
     %{trips: %{}, next_id: 1}
   end
@@ -64,6 +66,8 @@ defmodule Taxi.TripManager do
       {:ok, trip} ->
         if trip.estado == :en_progreso do
           trip_completado = %{trip | estado: :completado}
+
+          TripPersistence.log_completed_trip(trip_completado)
 
           nuevo_estado = %{estado |
             trips: Map.put(estado.trips, trip_id, trip_completado)
