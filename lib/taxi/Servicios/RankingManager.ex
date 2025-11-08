@@ -1,6 +1,6 @@
 defmodule Taxi.RankingManager do
-  
-  alias Taxi.{User, UserPersistence}
+
+  alias Taxi.{UserPersistence}
 
   def actualizar_puntaje(nombre, puntos) do
     usuarios = UserPersistence.load_all()
