@@ -1,18 +1,29 @@
-defmodule ProyectoFinal do
+defmodule Taxi.Application do
   @moduledoc """
-  Documentation for `ProyectoFinal`.
+  Módulo principal de la aplicación UrbanFleet.
+  Inicia el árbol de supervisión OTP.
   """
 
-  @doc """
-  Hello world.
+  use Application
 
-  ## Examples
+  def start(_type, _args) do
+    "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    |> Util.mostrar_mensaje()
 
-      iex> ProyectoFinal.hello()
-      :world
+    "  🚕 URBANFLEET - Sistema de Taxis"
+    |> Util.mostrar_mensaje()
 
-  """
-  def hello do
-    :world
+    "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    |> Util.mostrar_mensaje()
+
+    children = [
+      Taxi.AuthManager,   # Gestión de sesiones
+      Taxi.Server,        # Servidor principal (como nodo-servidor en Problema 19)
+      Taxi.Supervisor     # Supervisor de viajes
+    ]
+
+    opts = [strategy: :one_for_one, name: Taxi.MainSupervisor]
+
+    Supervisor.start_link(children, opts)
   end
 end
