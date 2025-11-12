@@ -7,7 +7,7 @@ defmodule Taxi.TripServer do
   use GenServer
   alias Taxi.{Trip, TripPersistence, RankingManager}
 
-  @timeout 40_000 
+  @timeout 40_000
 
   # === API Pública ===
 
@@ -53,20 +53,21 @@ defmodule Taxi.TripServer do
     viaje = estado.viaje
 
     if viaje.estado == :pendiente do
-      # Cancelar temporizador de expiración
       Process.cancel_timer(estado.timer)
 
-      # Actualizar viaje
       viaje_actualizado = %{viaje |
         conductor: conductor,
         estado: :en_progreso
       }
 
-      # Mostrar mensaje de aceptación
-      mostrar_mensaje_viaje("ACEPTADO", viaje.id, conductor, nil)
+      # Tiempo aleatorio entre 20 y 40 segundos
+      tiempo_ms = Enum.random(20_000..40_000)
+      segundos = div(tiempo_ms, 1000)
 
-      # Nuevo temporizador para completar (40 segundos)
-      nuevo_timer = Process.send_after(self(), :completar, @timeout)
+      # Mostrar mensaje con duración estimada
+      mostrar_mensaje_viaje("ACEPTADO", viaje.id, conductor, nil, segundos)
+
+      nuevo_timer = Process.send_after(self(), :completar, tiempo_ms)
 
       {:reply, {:ok, viaje_actualizado}, %{estado | viaje: viaje_actualizado, timer: nuevo_timer}}
     else
@@ -76,30 +77,24 @@ defmodule Taxi.TripServer do
 
   # === Funciones Auxiliares ===
 
-  defp mostrar_mensaje_viaje(tipo, id, conductor, cliente) do
+  defp mostrar_mensaje_viaje(tipo, id, conductor, cliente, duracion \\ nil) do
     "\n┌─────────────────────────────────────┐"
     |> Util.mostrar_mensaje()
 
     case tipo do
       "ACEPTADO" ->
-        "│ 🚕 VIAJE #{id} ACEPTADO       │"
-        |> Util.mostrar_mensaje()
-        "│ Conductor: #{String.pad_trailing(conductor, 17)} │"
-        |> Util.mostrar_mensaje()
-
+        "│ 🚕 VIAJE #{id} ACEPTADO       │" |> Util.mostrar_mensaje()
+        "│ Conductor: #{String.pad_trailing(conductor, 17)} │" |> Util.mostrar_mensaje()
+        if duracion do
+          "│ Duración estimada: #{String.pad_trailing("#{duracion}s", 13)} │" |> Util.mostrar_mensaje()
+        end
       "EXPIRADO" ->
-        "│ ⚠️  VIAJE #{id} EXPIRADO       │"
-        |> Util.mostrar_mensaje()
-        "│ Cliente: #{String.pad_trailing(cliente, 19)} │"
-        |> Util.mostrar_mensaje()
-
+        "│ ⚠️  VIAJE #{id} EXPIRADO       │" |> Util.mostrar_mensaje()
+        "│ Cliente: #{String.pad_trailing(cliente, 19)} │" |> Util.mostrar_mensaje()
       "COMPLETADO" ->
-        "│ ✅ VIAJE #{id} COMPLETADO     │"
-        |> Util.mostrar_mensaje()
-        "│ Cliente: #{String.pad_trailing(cliente, 19)} │"
-        |> Util.mostrar_mensaje()
-        "│ Conductor: #{String.pad_trailing(conductor, 17)} │"
-        |> Util.mostrar_mensaje()
+        "│ ✅ VIAJE #{id} COMPLETADO     │" |> Util.mostrar_mensaje()
+        "│ Cliente: #{String.pad_trailing(cliente, 19)} │" |> Util.mostrar_mensaje()
+        "│ Conductor: #{String.pad_trailing(conductor, 17)} │" |> Util.mostrar_mensaje()
     end
 
     "└─────────────────────────────────────┘"
