@@ -1,7 +1,13 @@
 defmodule Taxi.TripServer do
   @moduledoc """
-  GenServer que representa un viaje individual.
-  Maneja temporizador y estados del viaje.
+  GenServer que representa un viaje individual dentro del sistema.
+  Responsabilidades principales:
+  - Mantener el estado del viaje (pendiente, en progreso, completado, expirado).
+  - Administrar temporizadores para expirar viajes no aceptados y completar viajes en progreso.
+  - Informar mensajes de estado útiles para seguimiento académico y funcional.
+
+  Este módulo modela el ciclo de vida de un viaje usando procesos concurrentes (un proceso por viaje).
+  Su terminación es controlada por eventos temporales (expiración o finalización).
   """
 
   use GenServer
@@ -11,20 +17,38 @@ defmodule Taxi.TripServer do
 
   # === API Pública ===
 
+  @doc """
+  Inicia el proceso GenServer asociado a un viaje.
+  Recibe un mapa con los datos iniciales (id, cliente, origen, destino).
+  Devuelve {:ok, pid} o {:error, razon}.
+  """
   def start_link(datos) do
     GenServer.start_link(__MODULE__, datos)
   end
 
+  @doc """
+  Obtiene el estado actual del viaje (struct Trip).
+  Se usa para consultar datos como cliente, origen, destino y estado.
+  """
   def obtener_estado(pid) do
     GenServer.call(pid, :obtener_estado)
   end
 
+  @doc """
+  Intenta aceptar un viaje pendiente por parte de un conductor.
+  Si el viaje está disponible cambia a :en_progreso y programa su finalización.
+  Devuelve {:ok, viaje_actualizado} o {:error, mensaje}.
+  """
   def aceptar(pid, conductor) do
     GenServer.call(pid, {:aceptar, conductor})
   end
 
   # === Callbacks GenServer ===
 
+  @doc """
+  Inicializa el estado interno del viaje.
+  Crea la estructura Trip con estado :pendiente y programa un temporizador de expiración.
+  """
   def init(datos) do
     viaje = %Trip{
       id: datos.id,
@@ -36,7 +60,6 @@ defmodule Taxi.TripServer do
       estado: :pendiente
     }
 
-    # Iniciar temporizador de expiración
     timer = Process.send_after(self(), :expirar, @timeout)
 
     "🚕 Viaje #{viaje.id} creado (expira en 40s)"
@@ -45,10 +68,18 @@ defmodule Taxi.TripServer do
     {:ok, %{viaje: viaje, timer: timer}}
   end
 
+  @doc """
+  Maneja la solicitud síncrona para obtener el estado del viaje.
+  Responde con la estructura completa Trip.
+  """
   def handle_call(:obtener_estado, _from, estado) do
     {:reply, estado.viaje, estado}
   end
 
+  @doc """
+  Maneja la aceptación del viaje por un conductor.
+  Cancela el temporizador de expiración y programa uno para completar el viaje.
+  """
   def handle_call({:aceptar, conductor}, _from, estado) do
     viaje = estado.viaje
 
@@ -77,6 +108,11 @@ defmodule Taxi.TripServer do
 
   # === Funciones Auxiliares ===
 
+  @doc """
+  Muestra un bloque formateado informando el estado del viaje.
+  Tipos posibles: ACEPTADO, EXPIRADO, COMPLETADO.
+  Se usa solo internamente para mejorar la salida por consola.
+  """
   defp mostrar_mensaje_viaje(tipo, id, conductor, cliente, duracion \\ nil) do
     "\n┌─────────────────────────────────────┐"
     |> Util.mostrar_mensaje()
@@ -101,7 +137,11 @@ defmodule Taxi.TripServer do
     |> Util.mostrar_mensaje()
   end
 
-  # Manejo de expiración
+  @doc """
+  Maneja el evento de expiración del viaje.
+  Cambia estado a :expirado, registra el viaje y penaliza al cliente.
+  Termina el proceso después de completar las acciones.
+  """
   def handle_info(:expirar, estado) do
     viaje = estado.viaje
 
@@ -129,7 +169,11 @@ defmodule Taxi.TripServer do
     end
   end
 
-  # Manejo de completado
+  @doc """
+  Maneja el evento de finalización de un viaje en progreso.
+  Cambia estado a :completado, otorga puntos y registra el viaje.
+  Termina el proceso limpiamente.
+  """
   def handle_info(:completar, estado) do
     viaje = estado.viaje
 
