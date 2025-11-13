@@ -1,14 +1,15 @@
 defmodule Taxi.NodeHelper do
   @moduledoc """
-  Módulo auxiliar para facilitar la conexión entre nodos.
-  Inspirado en el Problema 19 pero sin scripts externos.
+  Módulo auxiliar para facilitar la conexión entre nodos en un entorno distribuido.
   """
 
   @cookie :urbanfleet_taxi
 
   @doc """
-  Conecta al nodo remoto especificado.
-  Si no se especifica nodo, intenta conectar a los nodos comunes.
+  Intenta conectar el nodo actual con otros nodos.
+  - Sin argumentos: intenta conexiones automáticas a nombres predefinidos.
+  - Con `nodo_remoto`: intenta conectarse únicamente al nodo especificado.
+  Retorna :ok si conecta al menos a un nodo o :no_conectado/:error si no fue posible.
   """
   def conectar_nodos(nodo_remoto \\ nil) do
     # Configurar cookie si no está configurada
@@ -21,7 +22,8 @@ defmodule Taxi.NodeHelper do
   end
 
   @doc """
-  Muestra información sobre nodos conectados
+  Muestra información sobre el nodo actual y la lista de nodos conectados.
+  Emite consejos en caso de no existir conexiones activas.
   """
   def info_nodos do
     Util.mostrar_mensaje("\n=== INFORMACIÓN DE NODOS ===")
@@ -37,7 +39,8 @@ defmodule Taxi.NodeHelper do
   end
 
   @doc """
-  Verifica si hay nodos conectados
+  Indica si existen nodos conectados actualmente.
+  Devuelve true cuando hay al menos un nodo en `Node.list/0`.
   """
   def nodos_conectados? do
     not Enum.empty?(Node.list())

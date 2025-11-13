@@ -1,7 +1,15 @@
 defmodule Taxi.RankingManager do
+  @moduledoc """
+  Servicio de ranking y puntajes de usuarios.
+  """
 
   alias Taxi.{UserPersistence}
 
+  @doc """
+  Suma (o resta) puntos al usuario identificado por su nombre.
+  Persiste el cambio en el almacenamiento general de usuarios.
+  Retorna {:ok, usuario_actualizado} o {:error, "Usuario no encontrado"}.
+  """
   def actualizar_puntaje(nombre, puntos) do
     usuarios = UserPersistence.load_all()
 
@@ -21,48 +29,81 @@ defmodule Taxi.RankingManager do
     end
   end
 
+  @doc """
+  Otorga puntos a cliente (+10) y conductor (+15) por un viaje completado.
+  Devuelve :ok tras intentar ambas actualizaciones.
+  """
   def otorgar_puntos_viaje_completado(cliente, conductor) do
     actualizar_puntaje(cliente, 10)
     actualizar_puntaje(conductor, 15)
     :ok
   end
 
+  @doc """
+  Penaliza con -5 puntos al cliente cuando su viaje expira sin ser aceptado.
+  Devuelve el resultado de la actualización.
+  """
   def penalizar_viaje_expirado(cliente) do
     actualizar_puntaje(cliente, -5)
   end
 
+  @doc """
+  Obtiene el ranking global de usuarios (todos los roles) ordenado por puntaje descendente.
+  Devuelve una lista de `%User{}`.
+  """
   def obtener_ranking_global do
     UserPersistence.load_all()
     |> Enum.sort_by(&(&1.puntaje), :desc)
   end
 
+  @doc """
+  Obtiene el ranking de conductores ordenado por puntaje descendente.
+  Devuelve una lista de `%User{}` filtrada por rol :conductor.
+  """
   def obtener_ranking_conductores do
     UserPersistence.load_all()
     |> Enum.filter(&(&1.rol == :conductor))
     |> Enum.sort_by(&(&1.puntaje), :desc)
   end
 
+  @doc """
+  Obtiene el ranking de clientes ordenado por puntaje descendente.
+  Devuelve una lista de `%User{}` filtrada por rol :cliente.
+  """
   def obtener_ranking_clientes do
     UserPersistence.load_all()
     |> Enum.filter(&(&1.rol == :cliente))
     |> Enum.sort_by(&(&1.puntaje), :desc)
   end
 
+  @doc """
+  Toma los primeros n usuarios del ranking global (10 por defecto).
+  """
   def obtener_top(n \\ 10) do
     obtener_ranking_global()
     |> Enum.take(n)
   end
 
+  @doc """
+  Toma los primeros n usuarios del ranking de conductores (10 por defecto).
+  """
   def obtener_top_conductores(n \\ 10) do
     obtener_ranking_conductores()
     |> Enum.take(n)
   end
 
+  @doc """
+  Toma los primeros n usuarios del ranking de clientes (10 por defecto).
+  """
   def obtener_top_clientes(n \\ 10) do
     obtener_ranking_clientes()
     |> Enum.take(n)
   end
 
+  @doc """
+  Muestra por consola el ranking global formateado con posiciones, rol y puntaje.
+  Sin retorno significativo (efecto de salida por pantalla).
+  """
   def mostrar_ranking_global do
     Util.mostrar_mensaje("\n=== RANKING GLOBAL ===")
 
@@ -74,6 +115,9 @@ defmodule Taxi.RankingManager do
     end)
   end
 
+  @doc """
+  Muestra por consola el ranking de conductores con posiciones y puntaje.
+  """
   def mostrar_ranking_conductores do
     Util.mostrar_mensaje("\n=== TOP CONDUCTORES ===")
 
@@ -84,6 +128,9 @@ defmodule Taxi.RankingManager do
     end)
   end
 
+  @doc """
+  Muestra por consola el ranking de clientes con posiciones y puntaje.
+  """
   def mostrar_ranking_clientes do
     Util.mostrar_mensaje("\n=== TOP CLIENTES ===")
 
@@ -94,6 +141,10 @@ defmodule Taxi.RankingManager do
     end)
   end
 
+  @doc """
+  Devuelve la posición de un usuario en el ranking global (1-based).
+  Retorna {:ok, posicion} o {:error, "Usuario no encontrado en el ranking"}.
+  """
   def obtener_posicion(nombre) do
     ranking = obtener_ranking_global()
 
@@ -103,7 +154,11 @@ defmodule Taxi.RankingManager do
     end
   end
 
-   def consultar_puntaje(nombre) do
+  @doc """
+  Consulta y muestra por consola el puntaje y posición de un usuario.
+  Si no se encuentra, informa el hecho al usuario.
+  """
+  def consultar_puntaje(nombre) do
     case UserPersistence.find_by_name(nombre) do
       nil ->
         Util.mostrar_mensaje("Usuario no encontrado")
@@ -121,5 +176,4 @@ defmodule Taxi.RankingManager do
         end
     end
   end
-
 end
