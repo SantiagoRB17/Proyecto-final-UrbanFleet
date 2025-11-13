@@ -1,8 +1,6 @@
 defmodule Taxi.UserPersistence do
   @moduledoc """
-  Módulo de persistencia especializado para usuarios.
-  Se apoya en Taxi.Persistence para leer y escribir en JSON,
-  pero mantiene su propia ruta de almacenamiento.
+  Módulo de persistencia enfocado en la gestión de usuarios.
   """
 
   alias Taxi.{User, Persistence}
@@ -19,7 +17,7 @@ defmodule Taxi.UserPersistence do
 
   @doc """
   Guarda la lista completa de usuarios en el archivo JSON.
-  Sobrescribe el contenido anterior.
+  Sobrescribe el contenido anterior para mantener consistencia.
   """
   def save_all(users) do
     Persistence.write_json(@users_file, users)
@@ -27,7 +25,7 @@ defmodule Taxi.UserPersistence do
 
   @doc """
   Agrega un solo usuario al almacenamiento.
-  Lee la lista actual, concatena y guarda la lista completa.
+  Lee la lista actual, concatena y vuelve a guardar la lista completa.
   """
   def save(%User{} = user) do
     load_all()
@@ -43,5 +41,4 @@ defmodule Taxi.UserPersistence do
     load_all()
     |> Enum.find(&(&1.nombre == nombre))
   end
-
 end

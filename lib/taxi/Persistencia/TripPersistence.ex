@@ -1,12 +1,13 @@
 defmodule Taxi.TripPersistence do
   @moduledoc """
-  Persistencia de viajes en el archivo results.log
+  Módulo de persistencia para registrar viajes en un archivo de texto plano.
   """
 
   @results_file "data/results.log"
 
   @doc """
-  Inicializa el archivo de log si no existe
+  Inicializa el archivo de log si no existe.
+  Crea la carpeta `data` y un archivo vacío para comenzar a registrar.
   """
   def inicializar do
     unless File.exists?(@results_file) do
@@ -16,7 +17,8 @@ defmodule Taxi.TripPersistence do
   end
 
   @doc """
-  Guarda cualquier viaje en el log (completado, expirado, etc)
+  Registra un viaje en el archivo de log.
+  Acepta cualquier estado de viaje y escribe una línea con campos clave.
   """
   def log_trip(trip) do
     inicializar()
@@ -35,7 +37,7 @@ defmodule Taxi.TripPersistence do
 
     File.write!(@results_file, entrada, [:append])
   end
-  
+
   defp format_log_entry(fecha, cliente, conductor, origen, destino, estado) do
     "#{fecha}; cliente=#{cliente}; conductor=#{conductor}; " <>
     "origen=#{origen}; destino=#{destino}; status=#{estado}\n"
