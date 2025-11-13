@@ -1,11 +1,19 @@
 defmodule Taxi.Application do
   @moduledoc """
-  Módulo principal de la aplicación UrbanFleet.
-  Inicia el árbol de supervisión OTP.
+  Módulo principal de arranque de la aplicación UrbanFleet.
+  Responsabilidades:
+  - Construir y arrancar el árbol de supervisión OTP.
+  - Iniciar módulos base: autenticación, servidor de viajes y supervisor dinámico.
+
+  Representa el punto de entrada típico en aplicaciones Elixir.
   """
 
   use Application
 
+  @doc """
+  Arranca la aplicación creando el árbol de supervisión.
+  Devuelve {:ok, pid_supervisor_principal}.
+  """
   def start(_type, _args) do
     "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     |> Util.mostrar_mensaje()
@@ -17,9 +25,9 @@ defmodule Taxi.Application do
     |> Util.mostrar_mensaje()
 
     children = [
-      Taxi.AuthManager,   # Gestión de sesiones
-      Taxi.Server,        # Servidor principal (como nodo-servidor en Problema 19)
-      Taxi.Supervisor     # Supervisor de viajes
+      Taxi.AuthManager,
+      Taxi.Server,
+      Taxi.Supervisor
     ]
 
     opts = [strategy: :one_for_one, name: Taxi.MainSupervisor]

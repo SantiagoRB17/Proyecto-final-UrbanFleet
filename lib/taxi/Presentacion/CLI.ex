@@ -1,11 +1,32 @@
 defmodule Taxi.CLI do
   @moduledoc """
   Interfaz de línea de comandos para UrbanFleet.
-  Sin scripts externos, todo desde IEx.
+
+  Este módulo proporciona la interacción principal del usuario con el sistema.
+  Permite a clientes solicitar viajes y a conductores aceptarlos.
+
+  ## Funcionalidad Principal
+  - Conectar/desconectar usuarios
+  - Solicitar viajes (clientes)
+  - Listar y aceptar viajes (conductores)
+  - Ver puntajes y rankings
+  - Gestionar conexiones entre nodos
+
+  ## Uso
+      iex> Taxi.CLI.iniciar()
+
+  El sistema presentará un menú interactivo donde el usuario puede
+  ejecutar comandos escribiendo el nombre del comando y presionando Enter.
   """
 
   alias Taxi.{Server, AuthManager, LocationManager, RankingManager, NodeHelper}
 
+  @doc """
+  Inicia la interfaz de línea de comandos.
+
+  Muestra el banner del sistema, intenta conectar a otros nodos
+  automáticamente y entra en el loop principal de comandos.
+  """
   def iniciar do
     Util.mostrar_mensaje("\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
     Util.mostrar_mensaje("  🚕 URBANFLEET - Terminal de Usuario")
@@ -215,7 +236,7 @@ defmodule Taxi.CLI do
         Util.mostrar_mensaje("   Cliente: #{viaje.cliente}")
         Util.mostrar_mensaje("   Origen: #{viaje.origen}")
         Util.mostrar_mensaje("   Destino: #{viaje.destino}")
-        Util.mostrar_mensaje("\n⏱️  Se completará en 40 segundos.")
+        Util.mostrar_mensaje("\n⏱️  Se completará automáticamente.")
       {:error, mensaje} ->
         Util.mostrar_error("❌ #{mensaje}")
     end
