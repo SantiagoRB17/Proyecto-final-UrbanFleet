@@ -67,7 +67,7 @@ defmodule Taxi.Server do
   Prepara el mapa de viajes y el contador de IDs.
   """
   def init(_) do
-    Util.mostrar_mensaje("🚀 Servidor de viajes iniciado")
+    mostrar_inicio()
     estado = %{
       viajes: %{},
       next_id: 1
@@ -94,6 +94,7 @@ defmodule Taxi.Server do
         nuevos_viajes = Map.put(estado.viajes, trip_id, pid)
         nuevo_estado = %{estado | viajes: nuevos_viajes, next_id: trip_id + 1}
         viaje = TripServer.obtener_estado(pid)
+        mostrar_viaje_creado(viaje)
         {:reply, {:ok, viaje}, nuevo_estado}
 
       _error ->
@@ -183,5 +184,21 @@ defmodule Taxi.Server do
         :exit, _ -> {:cont, {:error, "Viaje no encontrado"}}
       end
     end)
+  end
+
+  # === Funciones de Visualización ===
+
+  defp mostrar_inicio do
+    Util.mostrar_mensaje("   🚀 Servidor de viajes iniciado")
+  end
+
+  defp mostrar_viaje_creado(viaje) do
+    Util.mostrar_mensaje("\n┌─────────────────────────────────────┐")
+    Util.mostrar_mensaje("│  🆕 Nuevo viaje registrado          │")
+    Util.mostrar_mensaje("├─────────────────────────────────────┤")
+    Util.mostrar_mensaje("│  ID: #{String.pad_trailing("#{viaje.id}", 30)} │")
+    Util.mostrar_mensaje("│  Cliente: #{String.pad_trailing(viaje.cliente, 24)} │")
+    Util.mostrar_mensaje("│  Estado: Pendiente                  │")
+    Util.mostrar_mensaje("└─────────────────────────────────────┘")
   end
 end

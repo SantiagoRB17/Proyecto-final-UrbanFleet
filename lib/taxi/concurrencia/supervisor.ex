@@ -31,13 +31,11 @@ defmodule Taxi.Supervisor do
 
     case DynamicSupervisor.start_child(__MODULE__, spec) do
       {:ok, pid} ->
-        "✅ Viaje #{datos.id} bajo supervisión"
-        |> Util.mostrar_mensaje()
+        mostrar_viaje_supervisado(datos.id)
         {:ok, pid}
 
       error ->
-        "❌ Error al iniciar viaje: #{inspect(error)}"
-        |> Util.mostrar_error()
+        mostrar_error_supervision(datos.id, error)
         error
     end
   end
@@ -52,13 +50,40 @@ defmodule Taxi.Supervisor do
   end
 
   @doc """
+  Muestra estadísticas del supervisor.
+  """
+  def mostrar_estadisticas do
+    stats = DynamicSupervisor.count_children(__MODULE__)
+
+    Util.mostrar_mensaje("\n┌─────────────────────────────────────┐")
+    Util.mostrar_mensaje("│  📊 Estadísticas del Supervisor     │")
+    Util.mostrar_mensaje("├─────────────────────────────────────┤")
+    Util.mostrar_mensaje("│  Procesos activos: #{String.pad_trailing("#{stats.active}", 14)} │")
+    Util.mostrar_mensaje("│  Procesos totales: #{String.pad_trailing("#{stats.workers}", 14)} │")
+    Util.mostrar_mensaje("└─────────────────────────────────────┘")
+  end
+
+  @doc """
   Inicializa el supervisor dinámico con estrategia :one_for_one.
   Se muestra un mensaje informativo al arrancar.
   """
   def init(_opts) do
-    "👷 Supervisor de viajes iniciado"
-    |> Util.mostrar_mensaje()
-
+    mostrar_inicio()
     DynamicSupervisor.init(strategy: :one_for_one)
+  end
+
+  # === Funciones de Visualización ===
+
+  defp mostrar_inicio do
+    Util.mostrar_mensaje("   👷 Supervisor de viajes iniciado")
+  end
+
+  defp mostrar_viaje_supervisado(id) do
+    Util.mostrar_mensaje("      ├─ ✅ Viaje #{id} bajo supervisión")
+  end
+
+  defp mostrar_error_supervision(id, error) do
+    Util.mostrar_error("      ├─ ❌ Error al supervisar viaje #{id}")
+    Util.mostrar_error("      └─ Detalle: #{inspect(error)}")
   end
 end

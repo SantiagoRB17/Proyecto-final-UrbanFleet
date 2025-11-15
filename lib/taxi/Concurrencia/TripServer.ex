@@ -62,8 +62,7 @@ defmodule Taxi.TripServer do
 
     timer = Process.send_after(self(), :expirar, @timeout)
 
-    "🚕 Viaje #{viaje.id} creado (expira en 40s)"
-    |> Util.mostrar_mensaje()
+    mostrar_viaje_creado(viaje)
 
     {:ok, %{viaje: viaje, timer: timer}}
   end
@@ -95,8 +94,7 @@ defmodule Taxi.TripServer do
       tiempo_ms = Enum.random(20_000..40_000)
       segundos = div(tiempo_ms, 1000)
 
-      # Mostrar mensaje con duración estimada
-      mostrar_mensaje_viaje("ACEPTADO", viaje.id, conductor, nil, segundos)
+      mostrar_viaje_aceptado(viaje_actualizado, segundos)
 
       nuevo_timer = Process.send_after(self(), :completar, tiempo_ms)
 
@@ -104,37 +102,6 @@ defmodule Taxi.TripServer do
     else
       {:reply, {:error, "Viaje no disponible"}, estado}
     end
-  end
-
-  # === Funciones Auxiliares ===
-
-  @doc """
-  Muestra un bloque formateado informando el estado del viaje.
-  Tipos posibles: ACEPTADO, EXPIRADO, COMPLETADO.
-  Se usa solo internamente para mejorar la salida por consola.
-  """
-  defp mostrar_mensaje_viaje(tipo, id, conductor, cliente, duracion \\ nil) do
-    "\n┌─────────────────────────────────────┐"
-    |> Util.mostrar_mensaje()
-
-    case tipo do
-      "ACEPTADO" ->
-        "│ 🚕 VIAJE #{id} ACEPTADO       │" |> Util.mostrar_mensaje()
-        "│ Conductor: #{String.pad_trailing(conductor, 17)} │" |> Util.mostrar_mensaje()
-        if duracion do
-          "│ Duración estimada: #{String.pad_trailing("#{duracion}s", 13)} │" |> Util.mostrar_mensaje()
-        end
-      "EXPIRADO" ->
-        "│ ⚠️  VIAJE #{id} EXPIRADO       │" |> Util.mostrar_mensaje()
-        "│ Cliente: #{String.pad_trailing(cliente, 19)} │" |> Util.mostrar_mensaje()
-      "COMPLETADO" ->
-        "│ ✅ VIAJE #{id} COMPLETADO     │" |> Util.mostrar_mensaje()
-        "│ Cliente: #{String.pad_trailing(cliente, 19)} │" |> Util.mostrar_mensaje()
-        "│ Conductor: #{String.pad_trailing(conductor, 17)} │" |> Util.mostrar_mensaje()
-    end
-
-    "└─────────────────────────────────────┘"
-    |> Util.mostrar_mensaje()
   end
 
   @doc """
@@ -146,8 +113,7 @@ defmodule Taxi.TripServer do
     viaje = estado.viaje
 
     if viaje.estado == :pendiente do
-      # Mostrar mensaje
-      mostrar_mensaje_viaje("EXPIRADO", viaje.id, nil, viaje.cliente)
+      mostrar_viaje_expirado(viaje)
 
       viaje_expirado = %{viaje | estado: :expirado}
 
@@ -158,8 +124,7 @@ defmodule Taxi.TripServer do
         GenServer.cast(Taxi.Server, {:limpiar_viaje, viaje.id})
       rescue
         error ->
-          "Error al procesar expiración: #{inspect(error)}"
-          |> Util.mostrar_error()
+          mostrar_error_proceso(viaje.id, "expiración", error)
       end
 
       # Terminar proceso limpiamente
@@ -178,8 +143,7 @@ defmodule Taxi.TripServer do
     viaje = estado.viaje
 
     if viaje.estado == :en_progreso do
-      # Mostrar mensaje
-      mostrar_mensaje_viaje("COMPLETADO", viaje.id, viaje.conductor, viaje.cliente)
+      mostrar_viaje_completado(viaje)
 
       viaje_completado = %{viaje | estado: :completado}
 
@@ -190,8 +154,7 @@ defmodule Taxi.TripServer do
         GenServer.cast(Taxi.Server, {:limpiar_viaje, viaje.id})
       rescue
         error ->
-          "Error al procesar completado: #{inspect(error)}"
-          |> Util.mostrar_error()
+          mostrar_error_proceso(viaje.id, "completado", error)
       end
 
       # Terminar proceso limpiamente
@@ -199,5 +162,68 @@ defmodule Taxi.TripServer do
     else
       {:noreply, estado}
     end
+  end
+
+  # === Funciones de Visualización ===
+
+  defp mostrar_viaje_creado(viaje) do
+    Util.mostrar_mensaje("\n┌─────────────────────────────────────────┐")
+    Util.mostrar_mensaje("│  🚕 NUEVO VIAJE CREADO                  │")
+    Util.mostrar_mensaje("├─────────────────────────────────────────┤")
+    Util.mostrar_mensaje("│  ID: #{String.pad_trailing("#{viaje.id}", 34)} │")
+    Util.mostrar_mensaje("│  Cliente: #{String.pad_trailing(viaje.cliente, 28)} │")
+    Util.mostrar_mensaje("│  Origen: #{String.pad_trailing(viaje.origen, 29)} │")
+    Util.mostrar_mensaje("│  Destino: #{String.pad_trailing(viaje.destino, 28)} │")
+    Util.mostrar_mensaje("│  Estado: Pendiente                      │")
+    Util.mostrar_mensaje("│  ⏱️  Expira en: 40 segundos              │")
+    Util.mostrar_mensaje("└─────────────────────────────────────────┘")
+  end
+
+  defp mostrar_viaje_aceptado(viaje, duracion) do
+    Util.mostrar_mensaje("\n┌─────────────────────────────────────────┐")
+    Util.mostrar_mensaje("│  ✅ VIAJE ACEPTADO                      │")
+    Util.mostrar_mensaje("├─────────────────────────────────────────┤")
+    Util.mostrar_mensaje("│  ID: #{String.pad_trailing("#{viaje.id}", 34)} │")
+    Util.mostrar_mensaje("│  Cliente: #{String.pad_trailing(viaje.cliente, 28)} │")
+    Util.mostrar_mensaje("│  Conductor: #{String.pad_trailing(viaje.conductor, 26)} │")
+    Util.mostrar_mensaje("│  Origen: #{String.pad_trailing(viaje.origen, 29)} │")
+    Util.mostrar_mensaje("│  Destino: #{String.pad_trailing(viaje.destino, 28)} │")
+    Util.mostrar_mensaje("│  ⏱️  Duración: #{String.pad_trailing("#{duracion}s", 25)} │")
+    Util.mostrar_mensaje("└─────────────────────────────────────────┘")
+  end
+
+  defp mostrar_viaje_expirado(viaje) do
+    Util.mostrar_mensaje("\n┌─────────────────────────────────────────┐")
+    Util.mostrar_mensaje("│  ⚠️  VIAJE EXPIRADO                     │")
+    Util.mostrar_mensaje("├─────────────────────────────────────────┤")
+    Util.mostrar_mensaje("│  ID: #{String.pad_trailing("#{viaje.id}", 34)} │")
+    Util.mostrar_mensaje("│  Cliente: #{String.pad_trailing(viaje.cliente, 28)} │")
+    Util.mostrar_mensaje("│  Origen: #{String.pad_trailing(viaje.origen, 29)} │")
+    Util.mostrar_mensaje("│  Destino: #{String.pad_trailing(viaje.destino, 28)} │")
+    Util.mostrar_mensaje("│  ❌ No fue aceptado a tiempo            │")
+    Util.mostrar_mensaje("└─────────────────────────────────────────┘")
+  end
+
+  defp mostrar_viaje_completado(viaje) do
+    Util.mostrar_mensaje("\n┌─────────────────────────────────────────┐")
+    Util.mostrar_mensaje("│  🎉 VIAJE COMPLETADO                    │")
+    Util.mostrar_mensaje("├─────────────────────────────────────────┤")
+    Util.mostrar_mensaje("│  ID: #{String.pad_trailing("#{viaje.id}", 34)} │")
+    Util.mostrar_mensaje("│  Cliente: #{String.pad_trailing(viaje.cliente, 28)} │")
+    Util.mostrar_mensaje("│  Conductor: #{String.pad_trailing(viaje.conductor, 26)} │")
+    Util.mostrar_mensaje("│  Origen: #{String.pad_trailing(viaje.origen, 29)} │")
+    Util.mostrar_mensaje("│  Destino: #{String.pad_trailing(viaje.destino, 28)} │")
+    Util.mostrar_mensaje("│  ✨ Puntos otorgados exitosamente      │")
+    Util.mostrar_mensaje("└─────────────────────────────────────────┘")
+  end
+
+  defp mostrar_error_proceso(id, tipo, error) do
+    Util.mostrar_mensaje("\n┌─────────────────────────────────────────┐")
+    Util.mostrar_mensaje("│  ⚠️  ERROR EN PROCESO                   │")
+    Util.mostrar_mensaje("├─────────────────────────────────────────┤")
+    Util.mostrar_mensaje("│  Viaje: #{String.pad_trailing("#{id}", 30)} │")
+    Util.mostrar_mensaje("│  Tipo: #{String.pad_trailing(tipo, 31)} │")
+    Util.mostrar_mensaje("└─────────────────────────────────────────┘")
+    Util.mostrar_error("   Detalle: #{inspect(error)}")
   end
 end
