@@ -38,7 +38,7 @@ defmodule Taxi.CLI do
     end
 
     Util.mostrar_mensaje("")
-    loop(nil)
+    loop(nil, nil)
   end
 
   # === Banner ===
@@ -55,14 +55,14 @@ defmodule Taxi.CLI do
 
   # === Loop Principal ===
 
-  defp loop(usuario_actual) do
-    mostrar_menu(usuario_actual)
+  defp loop(usuario_actual, rol_actual) do
+    mostrar_menu(usuario_actual, rol_actual)
 
     comando = Util.ingresar("\n🔹 Ingrese comando > ", :texto) |> String.trim() |> String.downcase()
-    resultado = procesar_comando(comando, usuario_actual)
+    resultado = procesar_comando(comando, usuario_actual, rol_actual)
 
     case resultado do
-      {:continuar, nuevo_usuario} -> loop(nuevo_usuario)
+      {:continuar, nuevo_usuario, nuevo_rol} -> loop(nuevo_usuario, nuevo_rol)
       :salir ->
         Util.mostrar_mensaje("\n╔═══════════════════════════════════════╗")
         Util.mostrar_mensaje("║  👋 ¡Gracias por usar UrbanFleet!    ║")
@@ -73,7 +73,7 @@ defmodule Taxi.CLI do
 
   # === Menús ===
 
-  defp mostrar_menu(nil) do
+  defp mostrar_menu(nil, nil) do
     Util.mostrar_mensaje("\n┌─────────────────────────────────────────┐")
     Util.mostrar_mensaje("│  📋 MENÚ PRINCIPAL                      │")
     Util.mostrar_mensaje("├─────────────────────────────────────────┤")
@@ -85,14 +85,38 @@ defmodule Taxi.CLI do
     Util.mostrar_mensaje("└─────────────────────────────────────────┘")
   end
 
-  defp mostrar_menu(usuario) do
+  defp mostrar_menu(usuario, :cliente) do
     Util.mostrar_mensaje("\n┌─────────────────────────────────────────┐")
     Util.mostrar_mensaje("│  👤 Usuario: #{String.pad_trailing(usuario, 26)} │")
+    Util.mostrar_mensaje("│  🧑 Rol: Cliente                        │")
     Util.mostrar_mensaje("├─────────────────────────────────────────┤")
     Util.mostrar_mensaje("│  📋 COMANDOS DISPONIBLES                │")
     Util.mostrar_mensaje("├─────────────────────────────────────────┤")
     Util.mostrar_mensaje("│  🚗 Viajes:                             │")
     Util.mostrar_mensaje("│    solicitar    → Pedir un viaje        │")
+    Util.mostrar_mensaje("├─────────────────────────────────────────┤")
+    Util.mostrar_mensaje("│  📊 Estadísticas:                       │")
+    Util.mostrar_mensaje("│    puntaje      → Ver mi puntaje        │")
+    Util.mostrar_mensaje("│    ranking      → Ver clasificaciones   │")
+    Util.mostrar_mensaje("├─────────────────────────────────────────┤")
+    Util.mostrar_mensaje("│  🌐 Red:                                │")
+    Util.mostrar_mensaje("│    nodos        → Info de nodos         │")
+    Util.mostrar_mensaje("│    red          → Diagnóstico de red    │")
+    Util.mostrar_mensaje("├─────────────────────────────────────────┤")
+    Util.mostrar_mensaje("│  desconectar    → Cerrar sesión         │")
+    Util.mostrar_mensaje("│  ayuda          → Mostrar ayuda         │")
+    Util.mostrar_mensaje("│  salir          → Cerrar programa       │")
+    Util.mostrar_mensaje("└─────────────────────────────────────────┘")
+  end
+
+  defp mostrar_menu(usuario, :conductor) do
+    Util.mostrar_mensaje("\n┌─────────────────────────────────────────┐")
+    Util.mostrar_mensaje("│  👤 Usuario: #{String.pad_trailing(usuario, 26)} │")
+    Util.mostrar_mensaje("│  🚗 Rol: Conductor                      │")
+    Util.mostrar_mensaje("├─────────────────────────────────────────┤")
+    Util.mostrar_mensaje("│  📋 COMANDOS DISPONIBLES                │")
+    Util.mostrar_mensaje("├─────────────────────────────────────────┤")
+    Util.mostrar_mensaje("│  🚖 Viajes:                             │")
     Util.mostrar_mensaje("│    listar       → Ver viajes disponibles│")
     Util.mostrar_mensaje("│    aceptar      → Aceptar un viaje      │")
     Util.mostrar_mensaje("├─────────────────────────────────────────┤")
@@ -112,76 +136,96 @@ defmodule Taxi.CLI do
 
   # === Procesador de Comandos ===
 
-  defp procesar_comando(cmd, nil) when cmd in ["conectar", "connect"], do: comando_conectar()
-  defp procesar_comando(cmd, usuario) when cmd in ["conectar", "connect"] do
+  defp procesar_comando(cmd, nil, nil) when cmd in ["conectar", "connect"], do: comando_conectar()
+  defp procesar_comando(cmd, usuario, rol) when cmd in ["conectar", "connect"] do
     Util.mostrar_error("❌ Ya estás conectado como #{usuario}")
-    {:continuar, usuario}
+    {:continuar, usuario, rol}
   end
 
-  defp procesar_comando(cmd, nil) when cmd in ["desconectar", "disconnect"] do
+  defp procesar_comando(cmd, nil, nil) when cmd in ["desconectar", "disconnect"] do
     Util.mostrar_error("❌ No estás conectado")
-    {:continuar, nil}
+    {:continuar, nil, nil}
   end
-  defp procesar_comando(cmd, usuario) when cmd in ["desconectar", "disconnect"], do: comando_desconectar(usuario)
+  defp procesar_comando(cmd, usuario, rol) when cmd in ["desconectar", "disconnect"], do: comando_desconectar(usuario)
 
-  defp procesar_comando(cmd, nil) when cmd in ["solicitar", "request_trip", "request"] do
+  # Comando SOLICITAR - Solo para CLIENTES
+  defp procesar_comando(cmd, nil, nil) when cmd in ["solicitar", "request_trip", "request"] do
     Util.mostrar_error("❌ Debes conectarte primero")
-    {:continuar, nil}
+    {:continuar, nil, nil}
   end
-  defp procesar_comando(cmd, usuario) when cmd in ["solicitar", "request_trip", "request"], do: comando_solicitar_viaje(usuario)
+  defp procesar_comando(cmd, usuario, :conductor) when cmd in ["solicitar", "request_trip", "request"] do
+    Util.mostrar_error("❌ Solo los clientes pueden solicitar viajes")
+    Util.mostrar_mensaje("💡 Como conductor, usa 'listar' y 'aceptar' para tomar viajes")
+    {:continuar, usuario, :conductor}
+  end
+  defp procesar_comando(cmd, usuario, :cliente) when cmd in ["solicitar", "request_trip", "request"], do: comando_solicitar_viaje(usuario)
 
-  defp procesar_comando(cmd, nil) when cmd in ["listar", "list_trips", "list"] do
+  # Comando LISTAR - Solo para CONDUCTORES
+  defp procesar_comando(cmd, nil, nil) when cmd in ["listar", "list_trips", "list"] do
     Util.mostrar_error("❌ Debes conectarte primero")
-    {:continuar, nil}
+    {:continuar, nil, nil}
   end
-  defp procesar_comando(cmd, usuario) when cmd in ["listar", "list_trips", "list"] do
+  defp procesar_comando(cmd, usuario, :cliente) when cmd in ["listar", "list_trips", "list"] do
+    Util.mostrar_error("❌ Solo los conductores pueden listar viajes")
+    Util.mostrar_mensaje("💡 Como cliente, usa 'solicitar' para pedir un viaje")
+    {:continuar, usuario, :cliente}
+  end
+  defp procesar_comando(cmd, usuario, :conductor) when cmd in ["listar", "list_trips", "list"] do
     comando_listar_viajes()
-    {:continuar, usuario}
+    {:continuar, usuario, :conductor}
   end
 
-  defp procesar_comando(cmd, nil) when cmd in ["aceptar", "accept_trip", "accept"] do
+  # Comando ACEPTAR - Solo para CONDUCTORES
+  defp procesar_comando(cmd, nil, nil) when cmd in ["aceptar", "accept_trip", "accept"] do
     Util.mostrar_error("❌ Debes conectarte primero")
-    {:continuar, nil}
+    {:continuar, nil, nil}
   end
-  defp procesar_comando(cmd, usuario) when cmd in ["aceptar", "accept_trip", "accept"], do: comando_aceptar_viaje(usuario)
+  defp procesar_comando(cmd, usuario, :cliente) when cmd in ["aceptar", "accept_trip", "accept"] do
+    Util.mostrar_error("❌ Solo los conductores pueden aceptar viajes")
+    Util.mostrar_mensaje("💡 Como cliente, tu viaje será aceptado por un conductor")
+    {:continuar, usuario, :cliente}
+  end
+  defp procesar_comando(cmd, usuario, :conductor) when cmd in ["aceptar", "accept_trip", "accept"], do: comando_aceptar_viaje(usuario)
 
-  defp procesar_comando(cmd, nil) when cmd in ["puntaje", "score"] do
+  # Comando PUNTAJE - Para ambos roles
+  defp procesar_comando(cmd, nil, nil) when cmd in ["puntaje", "score"] do
     Util.mostrar_error("❌ Debes conectarte primero")
-    {:continuar, nil}
+    {:continuar, nil, nil}
   end
-  defp procesar_comando(cmd, usuario) when cmd in ["puntaje", "score"] do
+  defp procesar_comando(cmd, usuario, rol) when cmd in ["puntaje", "score"] do
     RankingManager.consultar_puntaje(usuario)
-    {:continuar, usuario}
+    {:continuar, usuario, rol}
   end
 
-  defp procesar_comando(cmd, usuario) when cmd in ["ranking", "rankings"] do
+  # Comandos generales
+  defp procesar_comando(cmd, usuario, rol) when cmd in ["ranking", "rankings"] do
     comando_ranking()
-    {:continuar, usuario}
+    {:continuar, usuario, rol}
   end
 
-  defp procesar_comando(cmd, usuario) when cmd in ["nodos", "nodes"] do
+  defp procesar_comando(cmd, usuario, rol) when cmd in ["nodos", "nodes"] do
     NodeHelper.info_nodos()
-    {:continuar, usuario}
+    {:continuar, usuario, rol}
   end
 
-  defp procesar_comando(cmd, usuario) when cmd in ["red", "network", "diagnostico"] do
+  defp procesar_comando(cmd, usuario, rol) when cmd in ["red", "network", "diagnostico"] do
     comando_diagnostico_red()
-    {:continuar, usuario}
+    {:continuar, usuario, rol}
   end
 
-  defp procesar_comando(cmd, usuario) when cmd in ["ayuda", "help", "?"] do
-    mostrar_ayuda()
-    {:continuar, usuario}
+  defp procesar_comando(cmd, usuario, rol) when cmd in ["ayuda", "help", "?"] do
+    mostrar_ayuda(rol)
+    {:continuar, usuario, rol}
   end
 
-  defp procesar_comando(cmd, usuario) when cmd in ["salir", "exit", "quit"] do
+  defp procesar_comando(cmd, usuario, _rol) when cmd in ["salir", "exit", "quit"] do
     if usuario != nil, do: AuthManager.desconectar(usuario)
     :salir
   end
 
-  defp procesar_comando(_otro, usuario) do
+  defp procesar_comando(_otro, usuario, rol) do
     Util.mostrar_error("❌ Comando no reconocido. Usa 'ayuda' para ver los comandos disponibles")
-    {:continuar, usuario}
+    {:continuar, usuario, rol}
   end
 
   # === Implementación de Comandos ===
@@ -208,10 +252,12 @@ defmodule Taxi.CLI do
     case AuthManager.conectar(username, password, rol) do
       {:ok, mensaje} ->
         Util.mostrar_mensaje("\n✅ #{mensaje}")
-        {:continuar, username}
+        rol_texto = if rol == :cliente, do: "cliente", else: "conductor"
+        Util.mostrar_mensaje("👤 Conectado como: #{rol_texto}")
+        {:continuar, username, rol}
       {:error, mensaje} ->
         Util.mostrar_error("\n❌ #{mensaje}")
-        {:continuar, nil}
+        {:continuar, nil, nil}
     end
   end
 
@@ -219,10 +265,10 @@ defmodule Taxi.CLI do
     case AuthManager.desconectar(usuario) do
       {:ok, mensaje} ->
         Util.mostrar_mensaje("\n✅ #{mensaje}")
-        {:continuar, nil}
+        {:continuar, nil, nil}
       {:error, mensaje} ->
         Util.mostrar_error("\n❌ #{mensaje}")
-        {:continuar, usuario}
+        {:continuar, usuario, nil}
     end
   end
 
@@ -248,7 +294,7 @@ defmodule Taxi.CLI do
         Util.mostrar_error("\n❌ Error: #{mensaje}")
     end
 
-    {:continuar, usuario}
+    {:continuar, usuario, :cliente}
   end
 
   defp comando_listar_viajes do
@@ -297,7 +343,7 @@ defmodule Taxi.CLI do
         Util.mostrar_error("\n❌ Error: #{mensaje}")
     end
 
-    {:continuar, usuario}
+    {:continuar, usuario, :conductor}
   end
 
   defp comando_ranking do
@@ -549,7 +595,7 @@ defmodule Taxi.CLI do
 
   # === Ayuda ===
 
-  defp mostrar_ayuda do
+  defp mostrar_ayuda(rol) do
     Util.mostrar_mensaje("\n╔═══════════════════════════════════════════════════════╗")
     Util.mostrar_mensaje("║                  📖 AYUDA DEL SISTEMA                  ║")
     Util.mostrar_mensaje("╚═══════════════════════════════════════════════════════╝")
@@ -563,20 +609,39 @@ defmodule Taxi.CLI do
     Util.mostrar_mensaje("│  salir          Cerrar el programa                  │")
     Util.mostrar_mensaje("└─────────────────────────────────────────────────────┘")
 
-    Util.mostrar_mensaje("\n┌─────────────────────────────────────────────────────┐")
-    Util.mostrar_mensaje("│  🔹 COMANDOS DE CLIENTE                             │")
-    Util.mostrar_mensaje("├─────────────────────────────────────────────────────┤")
-    Util.mostrar_mensaje("│  solicitar      Solicitar un nuevo viaje            │")
-    Util.mostrar_mensaje("│  puntaje        Ver tu puntaje actual               │")
-    Util.mostrar_mensaje("└─────────────────────────────────────────────────────┘")
+    case rol do
+      :cliente ->
+        Util.mostrar_mensaje("\n┌─────────────────────────────────────────────────────┐")
+        Util.mostrar_mensaje("│  🔹 COMANDOS DE CLIENTE (Tu rol actual)             │")
+        Util.mostrar_mensaje("├─────────────────────────────────────────────────────┤")
+        Util.mostrar_mensaje("│  solicitar      Solicitar un nuevo viaje            │")
+        Util.mostrar_mensaje("│  puntaje        Ver tu puntaje actual               │")
+        Util.mostrar_mensaje("└─────────────────────────────────────────────────────┘")
 
-    Util.mostrar_mensaje("\n┌─────────────────────────────────────────────────────┐")
-    Util.mostrar_mensaje("│  🔹 COMANDOS DE CONDUCTOR                           │")
-    Util.mostrar_mensaje("├─────────────────────────────────────────────────────┤")
-    Util.mostrar_mensaje("│  listar         Ver viajes disponibles              │")
-    Util.mostrar_mensaje("│  aceptar        Aceptar un viaje                    │")
-    Util.mostrar_mensaje("│  puntaje        Ver tu puntaje actual               │")
-    Util.mostrar_mensaje("└─────────────────────────────────────────────────────┘")
+      :conductor ->
+        Util.mostrar_mensaje("\n┌─────────────────────────────────────────────────────┐")
+        Util.mostrar_mensaje("│  🔹 COMANDOS DE CONDUCTOR (Tu rol actual)           │")
+        Util.mostrar_mensaje("├─────────────────────────────────────────────────────┤")
+        Util.mostrar_mensaje("│  listar         Ver viajes disponibles              │")
+        Util.mostrar_mensaje("│  aceptar        Aceptar un viaje                    │")
+        Util.mostrar_mensaje("│  puntaje        Ver tu puntaje actual               │")
+        Util.mostrar_mensaje("└─────────────────────────────────────────────────────┘")
+
+      _ ->
+        Util.mostrar_mensaje("\n┌─────────────────────────────────────────────────────┐")
+        Util.mostrar_mensaje("│  🔹 COMANDOS DE CLIENTE                             │")
+        Util.mostrar_mensaje("├─────────────────────────────────────────────────────┤")
+        Util.mostrar_mensaje("│  solicitar      Solicitar un nuevo viaje            │")
+        Util.mostrar_mensaje("│  puntaje        Ver tu puntaje actual               │")
+        Util.mostrar_mensaje("└─────────────────────────────────────────────────────┘")
+
+        Util.mostrar_mensaje("\n┌─────────────────────────────────────────────────────┐")
+        Util.mostrar_mensaje("│  🔹 COMANDOS DE CONDUCTOR                           │")
+        Util.mostrar_mensaje("├─────────────────────────────────────────────────────┤")
+        Util.mostrar_mensaje("│  listar         Ver viajes disponibles              │")
+        Util.mostrar_mensaje("│  aceptar        Aceptar un viaje                    │")
+        Util.mostrar_mensaje("│  puntaje        Ver tu puntaje actual               │")
+    end
 
     Util.mostrar_mensaje("\n┌─────────────────────────────────────────────────────┐")
     Util.mostrar_mensaje("│  🔹 ESTADÍSTICAS Y RANKINGS                         │")
@@ -604,7 +669,8 @@ defmodule Taxi.CLI do
     Util.mostrar_mensaje("├─────────────────────────────────────────────────────┤")
     Util.mostrar_mensaje("│  • Los viajes expiran en 40 segundos                │")
     Util.mostrar_mensaje("│  • Los viajes se completan automáticamente          │")
-    Util.mostrar_mensaje("│  • Puedes usar nombres cortos para comandos         │")
+    Util.mostrar_mensaje("│  • Solo clientes pueden solicitar viajes           │")
+    Util.mostrar_mensaje("│  • Solo conductores pueden aceptar viajes          │")
     Util.mostrar_mensaje("│  • El sistema busca nodos automáticamente           │")
     Util.mostrar_mensaje("│  • Usa 'red' si hay problemas de conexión           │")
     Util.mostrar_mensaje("└─────────────────────────────────────────────────────┘")
