@@ -1,8 +1,26 @@
 [
   {
-    "nombre": "Santiago",
     "password": "lucas123",
     "rol": "cliente",
+    "nombre": "Santiago",
+    "puntaje": 25
+  },
+  {
+    "password": "123",
+    "rol": "conductor",
+    "nombre": "Laura",
+    "puntaje": 15
+  },
+  {
+    "password": "123",
+    "rol": "conductor",
+    "nombre": "laura",
+    "puntaje": 30
+  },
+  {
+    "password": "456",
+    "rol": "conductor",
+    "nombre": "maria",
     "puntaje": 0
   }
 ]

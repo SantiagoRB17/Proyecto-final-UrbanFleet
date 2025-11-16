@@ -54,7 +54,7 @@ defmodule Taxi.NodeHelper do
 
   defp conectar_automatico do
     # Nodos comunes a intentar conectar
-    nodos_posibles = [:"cliente@localhost", :"conductor@localhost", :"servidor@localhost"]
+    nodos_posibles = [:"cliente@pc1", :"cliente@pc2",:"conductor@pc1",:"conductor@pc2",:"conductor@pc3"]
     nodo_actual = node()
 
     # Filtrar el nodo actual

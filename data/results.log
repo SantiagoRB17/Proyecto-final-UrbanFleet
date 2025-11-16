@@ -1,1 +1,4 @@
-
+2025-11-16; cliente=Santiago; conductor=Laura; origen=Terminal; destino=Universidad; status=completado
+2025-11-16; cliente=Santiago; conductor=Sin conductor; origen=Universidad; destino=Estadio; status=expirado
+2025-11-16; cliente=Santiago; conductor=laura; origen=Parque; destino=Terminal; status=completado
+2025-11-16; cliente=Santiago; conductor=laura; origen=Terminal; destino=Centro; status=completado
